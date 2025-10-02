@@ -1,28 +1,27 @@
-import { api, setAuth, type AuthData } from "../lib/api";
+import api from './api';
 
 type LoginPayload = { email: string; password: string };
 
-type LoginResponse =
-  | { accessToken: string; tokenType?: string }
-  // ajuste se seu backend retornar { token, type }
-  | { token: string; type?: string };
+// Ajuste o body conforme o backend espera:
+// Aqui mapeamos email -> username para compatibilizar.
+export async function login({ email, password }: LoginPayload) {
+  const body = { username: email, password };
+  const { data } = await api.post('/auth/login', body);
 
-// Ajuste esta rota para a de login real do seu backend
-const LOGIN_URL = "/auth/login";
+  const token: string =
+    data?.accessToken ?? data?.token ?? data?.jwt ?? '';
 
-export async function login(payload: LoginPayload) {
-  const { data } = await api.post<LoginResponse>(LOGIN_URL, payload);
-
-  // normaliza para { accessToken, tokenType }
-  const normalized: AuthData =
-    "accessToken" in data
-      ? { accessToken: data.accessToken, tokenType: data.tokenType }
-      : { accessToken: (data as any).token, tokenType: (data as any).type };
-
-  setAuth(normalized);
-  return normalized;
+  if (!token || typeof token !== 'string') {
+    throw new Error('Token ausente na resposta do login');
+  }
+  localStorage.setItem('token', token);
+  return token;
 }
 
 export function logout() {
-  setAuth(null);
+  localStorage.removeItem('token');
+}
+
+export function isAuthenticated() {
+  return !!localStorage.getItem('token');
 }
