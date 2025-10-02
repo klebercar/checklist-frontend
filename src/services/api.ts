@@ -3,12 +3,12 @@ import { getToken } from '../utils/auth';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL;
 
-export const api = axios.create({
+const api = axios.create({
   baseURL,
-  withCredentials: false, // manter false se você usa Bearer; true se precisar de cookies
+  withCredentials: false, // mantenha false se usa Bearer (JWT)
 });
 
-// Anexa Authorization: Bearer <token> em todas as requisições
+// Anexa Authorization: Bearer <token> a cada requisição
 api.interceptors.request.use((config) => {
   const token = getToken();
   if (token) {
@@ -21,8 +21,9 @@ api.interceptors.request.use((config) => {
 // Opcional: tratar erros globais
 api.interceptors.response.use(
   (res) => res,
-  (err) => {
-    // console.warn('API error:', err?.response || err);
-    return Promise.reject(err);
-  }
+  (err) => Promise.reject(err)
 );
+
+// Exporta named e default para compatibilizar ambos os tipos de import
+export { api };
+export default api;
