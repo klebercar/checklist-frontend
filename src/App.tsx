@@ -1,21 +1,23 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import Login from './pages/Login';
-import Home from './pages/Home';
-import PrivateRoute from './routes/PrivateRoute';
 
-function App() {
+function Home() {
   return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/login" />} />
-      <Route path="/login" element={<Login />} />
-
-      <Route element={<PrivateRoute />}>
-        <Route path="/app" element={<Home />} />
-      </Route>
-
-      <Route path="*" element={<Navigate to="/app" />} />
-    </Routes>
+    <div style={{ padding: 24 }}>
+      <h2>Home</h2>
+      <p><Link to="/login">Ir para Login</Link></p>
+    </div>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home/>} />
+        <Route path="/login" element={<Login/>} />
+      </Routes>
+    </BrowserRouter>
+  );
+}

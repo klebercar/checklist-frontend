@@ -1,78 +1,79 @@
-import { FormEvent, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { api } from '../services/api';
+import { saveToken } from '../utils/auth';
 
 export default function Login() {
-  const navigate = useNavigate();
-  const { login } = useAuth();
-
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [username, setUsername] = useState('admin@hotel.com');
+  const [password, setPassword] = useState('admin123');
   const [error, setError] = useState<string | null>(null);
+  const baseUrl = import.meta.env.VITE_API_BASE_URL;
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError(null);
+
     try {
-      await login(email, password);
-      navigate('/app');
+      const payload = { username, password };
+      const { data } = await api.post('/api/auth/login', payload);
+
+      // Backend pode devolver token com chaves diferentes. Tentamos todas:
+      const token =
+        data?.token ||
+        data?.accessToken ||
+        data?.jwt ||
+        data?.access_token;
+
+      if (!token) {
+        throw new Error('Token não encontrado na resposta do backend.');
+      }
+
+      saveToken(token);
+      alert('Login OK! Token salvo. Agora as chamadas protegidas enviarão o Bearer.');
+      // redirecione para a home/dashboard caso tenha rota:
+      // navigate('/');
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Falha no login');
-    } finally {
-      setLoading(false);
+      console.error(err);
+      setError('Falha no login');
     }
   }
 
   return (
-    <div style={{ maxWidth: 380, margin: '60px auto', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: 420, margin: '40px auto', fontFamily: 'sans-serif' }}>
       <h2>Entrar</h2>
+
+      <p style={{ fontSize: 13, color: '#444' }}>
+        Base URL da API: <b>{baseUrl}</b>
+      </p>
+
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: 12 }}>
-          <label style={{ display: 'block', marginBottom: 4 }}>E-mail (ou usuário)</label>
+          <label style={{ display: 'block', marginBottom: 6 }}>E-mail (ou usuário)</label>
           <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             style={{ width: '100%', padding: 8 }}
-            type="email"
-            placeholder="email@exemplo.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
+            placeholder="admin@hotel.com"
           />
         </div>
 
         <div style={{ marginBottom: 12 }}>
-          <label style={{ display: 'block', marginBottom: 4 }}>Senha</label>
+          <label style={{ display: 'block', marginBottom: 6 }}>Senha</label>
           <input
-            style={{ width: '100%', padding: 8 }}
             type="password"
-            placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            required
+            style={{ width: '100%', padding: 8 }}
+            placeholder="••••••••"
           />
         </div>
 
-        {error && (
-          <div style={{ color: 'crimson', marginBottom: 12 }}>
-            {error}
-          </div>
-        )}
+        {error && <div style={{ color: 'red', marginBottom: 10 }}>{error}</div>}
 
-        <button type="submit" disabled={loading} style={{ padding: '8px 12px' }}>
-          {loading ? 'Entrando...' : 'Entrar'}
+        <button type="submit" style={{ padding: '8px 16px' }}>
+          Entrar
         </button>
       </form>
-
-      <p style={{ marginTop: 16 }}>
-        <small>
-          Base URL da API: <code>{import.meta.env.VITE_API_BASE_URL}</code>
-        </small>
-      </p>
-
-      <p>
-        <Link to="/">Voltar</Link>
-      </p>
     </div>
   );
 }

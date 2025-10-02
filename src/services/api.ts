@@ -1,35 +1,28 @@
 import axios from 'axios';
+import { getToken } from '../utils/auth';
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? '',
-  withCredentials: false,
+const baseURL = import.meta.env.VITE_API_BASE_URL;
+
+export const api = axios.create({
+  baseURL,
+  withCredentials: false, // manter false se você usa Bearer; true se precisar de cookies
 });
 
-export function getToken() {
-  return localStorage.getItem('token');
-}
-
+// Anexa Authorization: Bearer <token> em todas as requisições
 api.interceptors.request.use((config) => {
   const token = getToken();
   if (token) {
-    config.headers = config.headers || {};
-    config.headers['Authorization'] = `Bearer ${token}`;
+    config.headers = config.headers ?? {};
+    (config.headers as any).Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
+// Opcional: tratar erros globais
 api.interceptors.response.use(
-  (r) => r,
+  (res) => res,
   (err) => {
-    if (err?.response?.status === 401) {
-      localStorage.removeItem('token');
-      // Redireciona para login quando expira/401
-      if (!location.pathname.startsWith('/login')) {
-        window.location.href = '/login';
-      }
-    }
+    // console.warn('API error:', err?.response || err);
     return Promise.reject(err);
   }
 );
-
-export default api;
