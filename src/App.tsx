@@ -1,23 +1,26 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
-import Login from './pages/Login';
+import { Routes, Route, Navigate } from 'react-router-dom'
+import Login from './pages/Login'
+import Home from './pages/Home'
+import { useAuth } from './contexts/AuthContext'
 
-function Home() {
-  return (
-    <div style={{ padding: 24 }}>
-      <h2>Home</h2>
-      <p><Link to="/login">Ir para Login</Link></p>
-    </div>
-  );
+const PrivateRoute: React.FC<{children: JSX.Element}> = ({ children }) => {
+  const { isAuthenticated } = useAuth()
+  return isAuthenticated ? children : <Navigate to="/login" replace />
 }
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home/>} />
-        <Route path="/login" element={<Login/>} />
-      </Routes>
-    </BrowserRouter>
-  );
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route
+        path="/"
+        element={
+          <PrivateRoute>
+            <Home />
+          </PrivateRoute>
+        }
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
 }
